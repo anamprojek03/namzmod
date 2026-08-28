@@ -1,167 +1,714 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Akses & Tutorial</title>
-    <style>
-        body {
-            background-color: #0d0d2b;
-            color: white;
-            font-family: 'Segoe UI', sans-serif;
-            display: flex;
-            justify-content: center;
-            padding: 20px;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spin Wheel</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f1220;
+    --bg-soft: radial-gradient(900px 500px at 90% -10%, rgba(99,102,241,.20), transparent 60%),
+               radial-gradient(800px 460px at -10% 110%, rgba(56,189,248,.14), transparent 55%);
+    --card:#171a2b;
+    --card-2:#1e2238;
+    --border: rgba(148,163,184,.12);
+    --text:#eef0fb;
+    --muted:#8992ad;
+    --primary:#6366f1;
+    --primary-2:#818cf8;
+    --danger:#fb5b7c;
+    --ok:#22d3a5;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    min-height:100vh;
+    background: var(--bg-soft), var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex; flex-direction:column; align-items:center;
+    padding:24px 16px 60px;
+  }
+  .display{font-family:'Sora',sans-serif;}
 
-        .container {
-            width: 100%;
-            max-width: 450px;
-        }
+  header{
+    width:100%; max-width:520px;
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:28px;
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .mark{
+    width:38px; height:38px; border-radius:11px;
+    background:linear-gradient(135deg,var(--primary),#38bdf8);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 10px 24px -8px rgba(99,102,241,.6);
+  }
+  .brand h1{font-size:1.15rem; font-weight:700; letter-spacing:-.01em;}
+  .brand h1 span{color:var(--primary-2);}
 
-        .card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(0, 255, 0, 0.2);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
+  .icon-btn{
+    width:40px; height:40px; border-radius:11px;
+    background:var(--card); border:1px solid var(--border);
+    color:var(--muted); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:all .15s ease; font-size:.9rem;
+  }
+  .icon-btn:hover{ color:var(--text); border-color:rgba(99,102,241,.4); }
 
-        .header {
-            color: #ff9800;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-        }
+  main{ width:100%; max-width:520px; display:flex; flex-direction:column; align-items:center; }
 
-        /* Input & Copy Area */
-        .input-group {
-            margin-bottom: 15px;
-        }
+  .wheel-wrap{
+    position:relative;
+    width:min(84vw, 340px); height:min(84vw, 340px);
+    margin-bottom:26px;
+  }
+  .pointer{
+    position:absolute; top:-14px; left:50%; transform:translateX(-50%);
+    width:0; height:0; z-index:5;
+    border-left:16px solid transparent;
+    border-right:16px solid transparent;
+    border-top:26px solid #f5a623;
+    filter:drop-shadow(0 4px 8px rgba(0,0,0,.4));
+  }
+  #wheelCanvas{
+    width:100%; height:100%; border-radius:50%;
+    box-shadow: 0 0 0 6px var(--card), 0 0 0 8px var(--border), 0 30px 60px -20px rgba(0,0,0,.6);
+    transform: rotate(0deg);
+  }
+  .hub-btn{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:74px; height:74px; border-radius:50%;
+    background:linear-gradient(135deg,var(--primary),#38bdf8);
+    border:4px solid var(--bg);
+    color:#fff; font-family:'Sora',sans-serif; font-weight:700; font-size:.8rem;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; box-shadow:0 12px 28px -8px rgba(99,102,241,.7);
+    transition: transform .12s ease, filter .12s ease;
+    letter-spacing:.02em;
+  }
+  .hub-btn:hover{ filter:brightness(1.08); }
+  .hub-btn:active{ transform:translate(-50%,-50%) scale(.94); }
+  .hub-btn:disabled{ cursor:not-allowed; opacity:.7; }
 
-        .input-group label {
-            display: block;
-            font-size: 11px;
-            margin-bottom: 5px;
-            color: #bbb;
-        }
+  .result-banner{
+    min-height:52px;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    background:var(--card); border:1px solid var(--border);
+    border-radius:14px; padding:12px 18px; width:100%;
+    margin-bottom:18px; text-align:center;
+  }
+  .result-banner .label{font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em;}
+  .result-banner .value{font-family:'Sora',sans-serif; font-weight:700; font-size:1.05rem;}
+  .result-banner.idle .value{ color:var(--muted); font-weight:500; font-size:.85rem; font-family:'Inter',sans-serif;}
 
-        .login-info {
-            background: rgba(0, 0, 0, 0.4);
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            font-family: 'Courier New', monospace;
-            color: #00e676;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-        }
+  .history{
+    width:100%; background:var(--card); border:1px solid var(--border);
+    border-radius:14px; padding:14px 16px; margin-top:6px;
+  }
+  .history h3{font-size:.75rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:10px; font-weight:600;}
+  .history ul{list-style:none; display:flex; flex-direction:column; gap:8px; max-height:180px; overflow-y:auto;}
+  .history li{display:flex; align-items:center; justify-content:space-between; font-size:.82rem; padding:7px 10px; background:var(--card-2); border-radius:9px;}
+  .history li .dot{width:8px; height:8px; border-radius:50%; margin-right:8px; display:inline-block;}
+  .history .empty{color:var(--muted); font-size:.8rem; text-align:center; padding:8px 0;}
 
-        .badge {
-            background: #1a237e;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            color: #00bcd4;
-        }
+  /* ---------- Admin drawer ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(4,6,14,.6); backdrop-filter:blur(2px);
+    opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:40;
+  }
+  .overlay.open{opacity:1; pointer-events:auto;}
 
-        /* Buttons */
-        .btn {
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 15px;
-            border-radius: 30px;
-            font-weight: bold;
-            margin: 10px 0;
-            transition: 0.3s;
-            gap: 10px;
-        }
+  .drawer{
+    position:fixed; top:0; right:0; height:100%; width:min(420px, 100vw);
+    background:var(--bg); border-left:1px solid var(--border);
+    transform:translateX(100%); transition:transform .25s cubic-bezier(.4,0,.2,1);
+    z-index:41; display:flex; flex-direction:column;
+  }
+  .drawer.open{ transform:translateX(0); }
 
-        .download-btn {
-            background-color: #00c853;
-            color: white;
-            box-shadow: 0 4px 15px rgba(0, 200, 83, 0.4);
-        }
+  .drawer-head{
+    padding:20px 20px 16px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .drawer-head h2{font-family:'Sora',sans-serif; font-size:1.05rem;}
+  .drawer-body{ padding:18px 20px 100px; overflow-y:auto; flex:1; }
+  .drawer-foot{
+    padding:14px 20px; border-top:1px solid var(--border);
+    display:flex; gap:10px; background:var(--bg);
+  }
 
-        .tutorial-btn {
-            background-color: #f44336; /* Warna merah untuk YouTube/Video */
-            color: white;
-            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
-        }
+  .gate{ display:flex; flex-direction:column; gap:14px; padding-top:10px; }
+  .gate p{ color:var(--muted); font-size:.82rem; line-height:1.5; }
+  .gate input{
+    width:100%; padding:11px 13px; background:var(--card); border:1px solid var(--border);
+    border-radius:9px; color:var(--text); font-family:inherit; font-size:.875rem;
+  }
+  .gate input:focus{ outline:none; border-color:rgba(99,102,241,.55); box-shadow:0 0 0 3px rgba(99,102,241,.16); }
+  .gate .err{ color:var(--danger); font-size:.78rem; display:none; }
 
-        .tutorial-list {
-            padding-left: 20px;
-            line-height: 1.6;
-            color: #eee;
-            font-size: 14px;
-        }
-    </style>
+  .btn{
+    border:none; border-radius:9px; padding:11px 16px; font-family:'Inter',sans-serif;
+    font-weight:600; font-size:.85rem; cursor:pointer; transition:filter .15s ease, transform .1s ease;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn:active{ transform:translateY(1px); }
+  .btn-primary{ background:linear-gradient(135deg,var(--primary),#38bdf8); color:#fff; flex:1; }
+  .btn-primary:hover{ filter:brightness(1.08); }
+  .btn-ghost{ background:var(--card); border:1px solid var(--border); color:var(--text); }
+  .btn-ghost:hover{ border-color:rgba(99,102,241,.4); }
+  .btn-danger-ghost{ background:rgba(251,91,124,.08); border:1px solid rgba(251,91,124,.3); color:var(--danger); }
+
+  .total-badge{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--card-2); border:1px solid var(--border);
+    border-radius:10px; padding:11px 14px; margin-bottom:16px; font-size:.8rem;
+  }
+  .total-badge b{ font-family:'Sora',sans-serif; }
+  .total-badge.ok b{ color:var(--ok); }
+  .total-badge.warn b{ color:#f5a623; }
+
+  .seg-row{
+    display:flex; align-items:center; gap:8px;
+    background:var(--card); border:1px solid var(--border);
+    border-radius:11px; padding:10px; margin-bottom:10px;
+  }
+  .seg-row input[type=color]{
+    width:34px; height:34px; border:none; border-radius:8px; padding:0; background:none; cursor:pointer; flex-shrink:0;
+  }
+  .seg-row input[type=color]::-webkit-color-swatch-wrapper{ padding:0; }
+  .seg-row input[type=color]::-webkit-color-swatch{ border-radius:8px; border:1px solid var(--border); }
+  .seg-row .seg-label{
+    flex:1; min-width:0; background:transparent; border:none; color:var(--text);
+    font-size:.85rem; font-family:inherit; padding:6px 4px;
+  }
+  .seg-row .seg-label:focus{ outline:none; }
+  .seg-row .seg-weight-wrap{ display:flex; align-items:center; gap:4px; flex-shrink:0; }
+  .seg-row input[type=number]{
+    width:52px; background:var(--card-2); border:1px solid var(--border); border-radius:7px;
+    color:var(--text); text-align:center; font-family:inherit; font-size:.8rem; padding:6px 2px;
+  }
+  .seg-row input[type=number]:focus{ outline:none; border-color:rgba(99,102,241,.5); }
+  .seg-row .pct-tag{ font-size:.68rem; color:var(--muted); width:38px; text-align:right; flex-shrink:0; }
+  .seg-row .del-btn{
+    width:30px; height:30px; border-radius:7px; background:transparent; border:none;
+    color:var(--muted); cursor:pointer; flex-shrink:0; transition:color .15s ease;
+  }
+  .seg-row .del-btn:hover{ color:var(--danger); }
+
+  .add-row-btn{
+    width:100%; padding:11px; border-radius:11px; border:1.5px dashed var(--border);
+    background:transparent; color:var(--muted); font-size:.82rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:20px;
+    transition:all .15s ease;
+  }
+  .add-row-btn:hover{ border-color:rgba(99,102,241,.5); color:var(--primary-2); }
+
+  .sub-block{ margin-top:22px; padding-top:18px; border-top:1px solid var(--border); }
+  .sub-block h4{ font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:12px; }
+  .sub-block .hint{ font-size:.74rem; color:var(--muted); line-height:1.5; margin-top:8px; }
+
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--card); border:1px solid var(--border); color:var(--text);
+    padding:11px 18px; border-radius:10px; font-size:.82rem; z-index:60;
+    opacity:0; pointer-events:none; transition:all .25s ease;
+    display:flex; align-items:center; gap:8px;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast i{ color:var(--ok); }
+
+  @media (max-width:480px){
+    .drawer{ width:100vw; }
+  }
+
+  /* Classic spin-wheel presentation */
+  body{
+    background:
+      radial-gradient(circle at 50% 15%, rgba(255,255,255,.10), transparent 28%),
+      linear-gradient(180deg,#111827 0%,#0b1020 100%);
+    padding-top:32px;
+  }
+  header{justify-content:center; margin-bottom:22px;}
+  .brand{gap:12px;}
+  .brand .mark{
+    width:42px;height:42px;border-radius:50%;
+    background:linear-gradient(135deg,#f59e0b,#ef4444);
+    box-shadow:0 8px 24px rgba(239,68,68,.28);
+  }
+  .brand h1{font-size:1.35rem;}
+  .brand h1 span{color:#fbbf24;}
+  .wheel-wrap{
+    width:min(92vw,390px);height:min(92vw,390px);
+    margin-bottom:28px;
+  }
+  #wheelCanvas{
+    box-shadow:
+      0 0 0 7px #f8fafc,
+      0 0 0 10px rgba(245,158,11,.65),
+      0 18px 50px rgba(0,0,0,.45);
+    background:#fff;
+  }
+  .pointer{
+    top:-20px;
+    border-left-width:18px;
+    border-right-width:18px;
+    border-top:32px solid #f59e0b;
+  }
+  .hub-btn{
+    width:82px;height:82px;
+    background:linear-gradient(135deg,#ef4444,#f59e0b);
+    border:5px solid #fff;
+    box-shadow:0 8px 24px rgba(239,68,68,.38);
+    font-size:.86rem;
+  }
+  .result-banner{
+    background:rgba(23,26,43,.94);
+    border-radius:16px;
+    min-height:58px;
+    box-shadow:0 10px 28px rgba(0,0,0,.16);
+  }
+  .history{border-radius:16px;}
+  @media(max-width:480px){
+    body{padding-top:24px;}
+    .wheel-wrap{width:min(91vw,360px);height:min(91vw,360px);}
+  }
+
+</style>
 </head>
 <body>
 
-    <div class="container">
-        
-        <div class="card">
-            <div class="header"><span>🔐</span> Detail Panel Akses</div>
-            
-            <div class="input-group">
-                <label>USERNAME ANDA (Klik untuk copy)</label>
-                <div class="login-info" onclick="copyText('USER-NAMZ-2026')">
-                    <span id="user">user-namz-160</span>
-                    <small class="badge">COPY</small>
-                </div>
-            </div>
+  <header>
+    <div class="brand">
+      <div class="mark"><i class="fas fa-dharmachakra" style="color:#fff;font-size:16px;"></i></div>
+      <h1>Spin<span>Wheel</span></h1>
+    </div>
+    
+  </header>
 
-            <div class="input-group">
-                <label>PASSWORD ANDA (Klik untuk copy)</label>
-                <div class="login-info" onclick="copyText('PASS-NAMZ-99')">
-                    <span id="pass">pass-namz-160</span>
-                    <small class="badge">COPY</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="header" style="color: #00bcd4;"><span>🔗</span> Link Penting</div>
-            
-            <p style="font-size: 12px; margin-bottom: 5px;">1. Belum tahu cara install APK?</p>
-            <a href="https://drive.google.com/drive/folders/1-NYQkw0ay_z9Hoon-3D3Fv5Oye0edfR3" target="_blank" class="btn tutorial-btn">
-                📺 CARA PASANG (VIDEO)
-            </a>
-
-            <p style="font-size: 12px; margin-top: 15px; margin-bottom: 5px;">2. Sudah paham? Langsung download:</p>
-            <a href="https://www.mediafire.com/file/k5qc8h77y0lco01/AIMXIT+NAMZ+NEW+OB52.apk/file" download class="btn download-btn">
-                📥 DOWNLOAD APK SEKARANG
-            </a>
-        </div>
-
-        <div class="card">
-            <div class="header" style="color: #00e676;"><span>📖</span> Panduan Cepat</div>
-            <ol class="tutorial-list">
-                <li>Tonton video <b>Cara Pasang</b> jika Anda pengguna baru.</li>
-                <li>Download dan install file APK-nya.</li>
-                <li>Salin <b>Username</b> dan <b>Password</b> di atas.</li>
-                <li>Buka aplikasi, tempel (paste) data login, dan tekan <b>Login</b>.</li>
-                  <li>Wajib Dowload Shizuku dan mengaktifkan sizuku <b>Sizuku</b>.</li>
-            </ol>
-        </div>
-
+  <main>
+    <div class="wheel-wrap">
+      <div class="pointer"></div>
+      <canvas id="wheelCanvas" width="640" height="640"></canvas>
+      <button class="hub-btn display" id="spinBtn">SPIN</button>
     </div>
 
-    <script>
-        function copyText(text) {
-            navigator.clipboard.writeText(text);
-            alert("Berhasil disalin: " + text);
-        }
-    </script>
+    <div class="result-banner idle" id="resultBanner">
+      <span class="value">Tekan SPIN untuk mulai</span>
+    </div>
 
+    <div class="history">
+      <h3>Riwayat Putaran</h3>
+      <ul id="historyList"><li class="empty" style="justify-content:center;">Belum ada riwayat</li></ul>
+    </div>
+  </main>
+
+  <!-- Admin overlay + drawer -->
+  <div class="overlay" id="overlay"></div>
+  <div class="drawer" id="drawer">
+    <div class="drawer-head">
+      <h2 class="display">Panel Admin</h2>
+      <button class="icon-btn" id="closeDrawer"><i class="fas fa-xmark"></i></button>
+    </div>
+
+    <!-- Password gate -->
+    <div class="drawer-body" id="gateView">
+      <div class="gate">
+        <p>Masukkan password admin untuk mengatur persentase & segmen roda. (Password default: <b>admin123</b>, bisa diganti di bawah setelah masuk.)</p>
+        <input type="password" id="gatePass" placeholder="Password admin" autocomplete="off">
+        <p class="err" id="gateErr">Password salah. Coba lagi.</p>
+        <button class="btn btn-primary" id="gateSubmit"><i class="fas fa-unlock"></i> Masuk</button>
+      </div>
+    </div>
+
+    <!-- Settings view -->
+    <div class="drawer-body" id="settingsView" style="display:none;">
+      <div class="total-badge" id="totalBadge">
+        <span>Total bobot segmen</span>
+        <b id="totalWeightText">0%</b>
+      </div>
+
+      <div id="segList"></div>
+
+      <button class="add-row-btn" id="addSegBtn"><i class="fas fa-plus"></i> Tambah Segmen</button>
+
+      <div class="sub-block">
+        <h4>Ganti Password Admin</h4>
+        <div style="display:flex; gap:8px;">
+          <input type="password" id="newPassInput" placeholder="Password baru" style="flex:1; padding:10px 12px; background:var(--card); border:1px solid var(--border); border-radius:9px; color:var(--text); font-size:.82rem;">
+          <button class="btn btn-ghost" id="savePassBtn"><i class="fas fa-key"></i></button>
+        </div>
+        <p class="hint">Catatan: proteksi ini berjalan sepenuhnya di sisi browser (client-side) untuk keperluan demo. Untuk penggunaan produksi/publik, tambahkan autentikasi di server.</p>
+      </div>
+    </div>
+
+    <div class="drawer-foot" id="settingsFoot" style="display:none;">
+      <button class="btn btn-danger-ghost" id="resetBtn"><i class="fas fa-rotate-left"></i> Reset</button>
+      <button class="btn btn-primary" id="saveBtn"><i class="fas fa-check"></i> Simpan & Tutup</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"><i class="fas fa-circle-check"></i> <span id="toastMsg">Tersimpan</span></div>
+
+<script>
+(function(){
+  const DEG2RAD = Math.PI/180;
+  const STORAGE_KEY = 'wheel-config-v1';
+  const HISTORY_KEY = 'wheel-history-v1';
+  const PASS_KEY = 'wheel-admin-pass-v1';
+
+  const defaultSegments = () => ([
+    { id: crypto.randomUUID(), label:'Hadiah A', color:'#ef4444', weight:25 },
+    { id: crypto.randomUUID(), label:'Hadiah B', color:'#f97316', weight:25 },
+    { id: crypto.randomUUID(), label:'Hadiah C', color:'#22c55e', weight:25 },
+    { id: crypto.randomUUID(), label:'Hadiah D', color:'#7c3aed', weight:25 },
+  ]);
+
+  let segments = defaultSegments();
+  let history = [];
+  let adminPass = 'admin123';
+  let currentRotation = 0;
+  let spinning = false;
+
+  const canvas = document.getElementById('wheelCanvas');
+  const ctx = canvas.getContext('2d');
+  const spinBtn = document.getElementById('spinBtn');
+  const resultBanner = document.getElementById('resultBanner');
+  const historyList = document.getElementById('historyList');
+
+  const adminBtn = document.getElementById('adminBtn');
+  const overlay = document.getElementById('overlay');
+  const drawer = document.getElementById('drawer');
+  const closeDrawer = document.getElementById('closeDrawer');
+  const gateView = document.getElementById('gateView');
+  const settingsView = document.getElementById('settingsView');
+  const settingsFoot = document.getElementById('settingsFoot');
+  const gatePass = document.getElementById('gatePass');
+  const gateErr = document.getElementById('gateErr');
+  const gateSubmit = document.getElementById('gateSubmit');
+  const segList = document.getElementById('segList');
+  const addSegBtn = document.getElementById('addSegBtn');
+  const totalWeightText = document.getElementById('totalWeightText');
+  const totalBadge = document.getElementById('totalBadge');
+  const saveBtn = document.getElementById('saveBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const newPassInput = document.getElementById('newPassInput');
+  const savePassBtn = document.getElementById('savePassBtn');
+  const toast = document.getElementById('toast');
+  const toastMsg = document.getElementById('toastMsg');
+
+  let draftSegments = [];
+
+  // ---------- storage helpers (fallback to in-memory if window.storage unavailable) ----------
+  const hasStorage = () => (typeof window.storage !== 'undefined' && window.storage);
+
+  async function saveToStorage(key, value){
+    try{
+      if (hasStorage()) await window.storage.set(key, JSON.stringify(value), false);
+    }catch(e){ console.warn('storage set failed', e); }
+  }
+  async function loadFromStorage(key){
+    try{
+      if (hasStorage()){
+        const res = await window.storage.get(key, false);
+        if (res && res.value) return JSON.parse(res.value);
+      }
+    }catch(e){ /* key not found or unavailable, ignore */ }
+    return null;
+  }
+
+  async function loadAll(){
+    const savedSegs = await loadFromStorage(STORAGE_KEY);
+    if (savedSegs && Array.isArray(savedSegs) && savedSegs.length >= 2) segments = savedSegs;
+    const savedHist = await loadFromStorage(HISTORY_KEY);
+    if (savedHist && Array.isArray(savedHist)) history = savedHist;
+    const savedPass = await loadFromStorage(PASS_KEY);
+    if (savedPass && typeof savedPass === 'string') adminPass = savedPass;
+    drawWheel();
+    renderHistory();
+  }
+
+  function showToast(msg){
+    toastMsg.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(()=> toast.classList.remove('show'), 2200);
+  }
+
+  // ---------- wheel drawing ----------
+  function drawWheel(){
+    const w = canvas.width, h = canvas.height;
+    const cx = w/2, cy = h/2, r = w/2 - 6;
+    ctx.clearRect(0,0,w,h);
+
+    const total = segments.reduce((s,seg)=> s + Math.max(0, Number(seg.weight)||0), 0) || 1;
+    let startDeg = 0;
+
+    segments.forEach(seg => {
+      const weight = Math.max(0, Number(seg.weight)||0);
+      const sliceDeg = (weight/total) * 360;
+      const endDeg = startDeg + sliceDeg;
+      const startRad = (startDeg - 90) * DEG2RAD;
+      const endRad = (endDeg - 90) * DEG2RAD;
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, startRad, endRad, false);
+      ctx.closePath();
+      ctx.fillStyle = seg.color;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(15,18,32,0.9)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // label along radius
+      const midRad = (startRad+endRad)/2;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(midRad);
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = getContrastColor(seg.color);
+      const fontSize = Math.max(16, Math.min(30, r*0.11));
+      ctx.font = `700 ${fontSize}px Sora, sans-serif`;
+      const label = seg.label || '';
+      ctx.fillText(truncateLabel(ctx, label, r*0.72), r - 22, 0);
+      ctx.restore();
+
+      startDeg = endDeg;
+    });
+
+    // hub ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, r*0.14, 0, Math.PI*2);
+    ctx.fillStyle = '#0f1220';
+    ctx.fill();
+  }
+
+  function truncateLabel(ctx, text, maxWidth){
+    if (ctx.measureText(text).width <= maxWidth) return text;
+    let t = text;
+    while (t.length > 1 && ctx.measureText(t+'…').width > maxWidth){ t = t.slice(0,-1); }
+    return t + '…';
+  }
+
+  function getContrastColor(hex){
+    const c = hex.replace('#','');
+    if (c.length !== 6) return '#111';
+    const r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
+    const lum = (0.299*r + 0.587*g + 0.114*b)/255;
+    return lum > 0.6 ? '#111827' : '#ffffff';
+  }
+
+  // ---------- weighted spin logic ----------
+  function pickWeightedIndex(){
+    const total = segments.reduce((s,seg)=> s + Math.max(0, Number(seg.weight)||0), 0);
+    if (total <= 0) return Math.floor(Math.random()*segments.length);
+    let r = Math.random()*total;
+    for (let i=0;i<segments.length;i++){
+      const w = Math.max(0, Number(segments[i].weight)||0);
+      if (r < w) return i;
+      r -= w;
+    }
+    return segments.length-1;
+  }
+
+  function spin(){
+    if (spinning || segments.length < 2) return;
+    spinning = true;
+    spinBtn.disabled = true;
+    resultBanner.classList.remove('idle');
+    resultBanner.innerHTML = '<span class="label">Memutar...</span>';
+
+    const total = segments.reduce((s,seg)=> s + Math.max(0, Number(seg.weight)||0), 0) || 1;
+    const idx = pickWeightedIndex();
+
+    let startDeg = 0;
+    for (let i=0;i<idx;i++){
+      startDeg += (Math.max(0, Number(segments[i].weight)||0)/total) * 360;
+    }
+    const sliceDeg = (Math.max(0, Number(segments[idx].weight)||0)/total) * 360;
+    const inset = Math.min(sliceDeg*0.18, 6);
+    const targetDeg = startDeg + inset + Math.random()*(Math.max(sliceDeg - inset*2, 0.001));
+
+    const extraSpins = 6 + Math.floor(Math.random()*3);
+    const requiredX = ((360 - targetDeg) % 360 + 360) % 360;
+    const base = currentRotation - (currentRotation % 360);
+    let newRotation = base + extraSpins*360 + requiredX;
+    if (newRotation <= currentRotation) newRotation += 360;
+
+    canvas.style.transition = 'transform 4.2s cubic-bezier(.17,.67,.23,1)';
+    canvas.style.transform = `rotate(${newRotation}deg)`;
+
+    const onEnd = () => {
+      canvas.removeEventListener('transitionend', onEnd);
+      currentRotation = newRotation;
+      spinning = false;
+      spinBtn.disabled = false;
+      const seg = segments[idx];
+      resultBanner.innerHTML = `<span class="label">Hasil</span> <span class="value" style="color:${seg.color}">${escapeHtml(seg.label)}</span>`;
+      addHistory(seg);
+    };
+    canvas.addEventListener('transitionend', onEnd);
+  }
+
+  function addHistory(seg){
+    history.unshift({ label: seg.label, color: seg.color, time: new Date().toISOString() });
+    history = history.slice(0, 15);
+    renderHistory();
+    saveToStorage(HISTORY_KEY, history);
+  }
+
+  function renderHistory(){
+    if (!history.length){
+      historyList.innerHTML = '<li class="empty" style="justify-content:center;">Belum ada riwayat</li>';
+      return;
+    }
+    historyList.innerHTML = history.map(h => {
+      const t = new Date(h.time);
+      const timeStr = t.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+      return `<li><span><span class="dot" style="background:${h.color}"></span>${escapeHtml(h.label)}</span><span style="color:var(--muted)">${timeStr}</span></li>`;
+    }).join('');
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  // ---------- admin drawer ----------
+  function isAdminRoute(){
+    return window.location.pathname.replace(/\\/+$/, '') === '/admin';
+  }
+
+  function openDrawer(){
+    if (!isAdminRoute()) return;
+    overlay.classList.add('open');
+    drawer.classList.add('open');
+    gateView.style.display = 'block';
+    settingsView.style.display = 'none';
+    settingsFoot.style.display = 'none';
+    gatePass.value = '';
+    gateErr.style.display = 'none';
+    setTimeout(()=> gatePass.focus(), 250);
+  }
+  function closeDrawerFn(){
+    overlay.classList.remove('open');
+    drawer.classList.remove('open');
+  }
+
+  function enterSettings(){
+    draftSegments = JSON.parse(JSON.stringify(segments));
+    gateView.style.display = 'none';
+    settingsView.style.display = 'block';
+    settingsFoot.style.display = 'flex';
+    renderSegList();
+  }
+
+  function renderSegList(){
+    const total = draftSegments.reduce((s,seg)=> s + Math.max(0, Number(seg.weight)||0), 0);
+    totalWeightText.textContent = total.toFixed(0) + '%';
+    totalBadge.className = 'total-badge ' + (Math.abs(total-100) < 0.5 ? 'ok' : 'warn');
+
+    segList.innerHTML = '';
+    draftSegments.forEach(seg => {
+      const pct = total > 0 ? (Math.max(0,Number(seg.weight)||0)/total*100) : 0;
+      const row = document.createElement('div');
+      row.className = 'seg-row';
+      row.innerHTML = `
+        <input type="color" value="${seg.color}" data-id="${seg.id}" data-field="color">
+        <input type="text" class="seg-label" value="${escapeHtml(seg.label)}" data-id="${seg.id}" data-field="label" placeholder="Nama segmen">
+        <div class="seg-weight-wrap">
+          <input type="number" min="0" step="1" value="${seg.weight}" data-id="${seg.id}" data-field="weight">
+          <span class="pct-tag">${pct.toFixed(0)}%</span>
+        </div>
+        <button class="del-btn" data-id="${seg.id}" title="Hapus"><i class="fas fa-trash"></i></button>
+      `;
+      segList.appendChild(row);
+    });
+  }
+
+  segList.addEventListener('input', (e) => {
+    const id = e.target.dataset.id;
+    const field = e.target.dataset.field;
+    if (!id || !field) return;
+    const seg = draftSegments.find(s => s.id === id);
+    if (!seg) return;
+    if (field === 'weight'){
+      seg.weight = Math.max(0, Number(e.target.value) || 0);
+    } else {
+      seg[field] = e.target.value;
+    }
+    renderSegList();
+    // restore focus to the same field after re-render
+    const again = segList.querySelector(`[data-id="${id}"][data-field="${field}"]`);
+    if (again && document.activeElement !== again){
+      again.focus();
+      if (again.type === 'text') again.selectionStart = again.selectionEnd = again.value.length;
+    }
+  });
+
+  segList.addEventListener('click', (e) => {
+    const btn = e.target.closest('.del-btn');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    if (draftSegments.length <= 2){ showToast('Minimal 2 segmen diperlukan'); return; }
+    draftSegments = draftSegments.filter(s => s.id !== id);
+    renderSegList();
+  });
+
+  addSegBtn.addEventListener('click', () => {
+    const palette = ['#ef4444','#f97316','#f5a623','#22c55e','#14b8a6','#0ea5e9','#6366f1','#7c3aed','#ec4899'];
+    draftSegments.push({
+      id: crypto.randomUUID(),
+      label: 'Segmen ' + (draftSegments.length+1),
+      color: palette[draftSegments.length % palette.length],
+      weight: 10
+    });
+    renderSegList();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    draftSegments = defaultSegments();
+    renderSegList();
+    showToast('Dikembalikan ke default');
+  });
+
+  saveBtn.addEventListener('click', async () => {
+    if (draftSegments.length < 2){ showToast('Minimal 2 segmen diperlukan'); return; }
+    if (draftSegments.some(s => !s.label.trim())){ showToast('Nama segmen tidak boleh kosong'); return; }
+    segments = JSON.parse(JSON.stringify(draftSegments));
+    drawWheel();
+    await saveToStorage(STORAGE_KEY, segments);
+    showToast('Pengaturan tersimpan');
+    closeDrawerFn();
+  });
+
+  savePassBtn.addEventListener('click', async () => {
+    const v = newPassInput.value.trim();
+    if (!v){ showToast('Password tidak boleh kosong'); return; }
+    adminPass = v;
+    newPassInput.value = '';
+    await saveToStorage(PASS_KEY, adminPass);
+    showToast('Password admin diperbarui');
+  });
+
+  gateSubmit.addEventListener('click', () => {
+    if (gatePass.value === adminPass){
+      enterSettings();
+    } else {
+      gateErr.style.display = 'block';
+    }
+  });
+  gatePass.addEventListener('keydown', (e) => { if (e.key === 'Enter') gateSubmit.click(); });
+
+  if (isAdminRoute()) {
+    openDrawer();
+  }
+  closeDrawer.addEventListener('click', closeDrawerFn);
+  overlay.addEventListener('click', closeDrawerFn);
+  spinBtn.addEventListener('click', spin);
+
+  loadAll();
+})();
+</script>
 </body>
-
 </html>
