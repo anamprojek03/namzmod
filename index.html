@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Namz Spin Wheel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: linear-gradient(135deg, #0f172a, #1e1b4b); color: #fff; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .wheel-container { position: relative; width: 300px; height: 300px; margin: auto; }
+        canvas { width: 100%; height: 100%; filter: drop-shadow(0 10px 25px rgba(0,0,0,0.5)); }
+        .pointer {
+            position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; border-left: 15px solid transparent;
+            border-right: 15px solid transparent; border-top: 25px solid #facc15;
+            z-index: 10; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-4 relative">
+
+    <button onclick="toggleAdmin()" class="absolute top-4 right-4 glass px-3 py-2 rounded-xl text-xs flex items-center gap-2 hover:bg-slate-800 transition">
+        <i class="fa-solid fa-gear text-cyan-400"></i> Admin Panel
+    </button>
+
+    <header class="text-center mt-8">
+        <h1 class="text-xl font-black tracking-wider text-cyan-400 uppercase">Namz Spin Wheel</h1>
+        <p class="text-xs text-slate-400">Putar roda dan tentukan keberuntunganmu!</p>
+    </header>
+
+    <main id="mainView" class="flex flex-col items-center my-auto">
+        <div class="wheel-container">
+            <div class="pointer"></div>
+            <canvas id="wheelCanvas" width="500" height="500"></canvas>
+            <div onclick="spinWheel()" class="absolute inset-0 m-auto w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-xl cursor-pointer hover:scale-105 transition active:scale-95 border-4 border-slate-800 z-20">
+                <span class="text-slate-900 font-bold text-xs uppercase text-center leading-tight">Tap to<br>Spin</span>
+            </div>
+        </div>
+        
+        <div id="resultBox" class="mt-6 hidden glass px-6 py-3 rounded-xl border border-cyan-500/30 text-center animate-bounce">
+            <p class="text-xs text-slate-400">Pemenang Terpilih:</p>
+            <h2 id="winnerName" class="text-lg font-bold text-cyan-300"></h2>
+        </div>
+    </main>
+
+    <div id="adminView" class="hidden w-full max-w-md my-auto glass p-5 rounded-2xl border border-slate-700">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-sm font-bold text-cyan-400"><i class="fa-solid fa-sliders"></i> Pengaturan Peserta & Persentase</h2>
+            <button onclick="toggleAdmin()" class="text-slate-400 hover:text-white text-xs"><i class="fa-solid fa-xmark text-base"></i></button>
+        </div>
+        
+        <div id="itemContainer" class="space-y-2 max-h-60 overflow-y-auto pr-1 mb-3">
+            </div>
+
+        <div class="flex gap-2">
+            <button onclick="addParticipant()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-xl transition border border-slate-700"><i class="fa-solid fa-plus"></i> Tambah</button>
+            <button onclick="saveSettings()" class="flex-1 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-xs font-bold rounded-xl shadow-lg transition">Simpan & Putar Roda</button>
+        </div>
+    </div>
+
+    <footer class="text-xs text-slate-500 mb-2">
+        &copy; 2023 Namz New Era. All rights reserved.
+    </footer>
+
+    <script>
+        // Data Default Peserta & Persentase
+        let defaultData = [
+            { name: "Ali", percentage: 25, color: "#3b82f6" },
+            { name: "Beatriz", percentage: 25, color: "#ef4444" },
+            { name: "Charles", percentage: 25, color: "#f59e0b" },
+            { name: "Diya", percentage: 25, color: "#10b981" }
+        ];
+
+        let items = JSON.parse(localStorage.getItem('namz_spin_data')) || defaultData;
+
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        let startAngle = 0;
+        let isSpinning = false;
+
+        function drawWheel() {
+            const totalSlices = items.length;
+            if (totalSlices === 0) return;
+            const arcSize = (2 * Math.PI) / totalSlices;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const outsideRadius = 220;
+            const textRadius = 140;
+            const insideRadius = 40;
+            const center = canvas.width / 2;
+
+            items.forEach((item, i) => {
+                const angle = startAngle + i * arcSize;
+                ctx.fillStyle = item.color;
+                
+                ctx.beginPath();
+                ctx.arc(center, center, outsideRadius, angle, angle + arcSize, false);
+                ctx.arc(center, center, insideRadius, angle + arcSize, angle, true);
+                ctx.stroke();
+                ctx.fill();
+
+                ctx.save();
+                ctx.fillStyle = "#FFFFFF";
+                ctx.translate(center + Math.cos(angle + arcSize / 2) * textRadius, center + Math.sin(angle + arcSize / 2) * textRadius);
+                ctx.rotate(angle + arcSize / 2 + Math.PI / 2);
+                ctx.font = 'bold 16px Inter, sans-serif';
+                ctx.fillText(item.name, -ctx.measureText(item.name).width / 2, 0);
+                ctx.restore();
+            });
+        }
+
+        function spinWheel() {
+            if (isSpinning || items.length === 0) return;
+            isSpinning = true;
+            document.getElementById('resultBox').classList.add('hidden');
+
+            // Hitung pemenang berdasarkan persentase bobot
+            let totalPercentage = items.reduce((sum, item) => sum + parseFloat(item.percentage || 0), 0);
+            let rand = Math.random() * totalPercentage;
+            let currentSum = 0;
+            let winningIndex = 0;
+
+            for (let i = 0; i < items.length; i++) {
+                currentSum += parseFloat(items[i].percentage || 0);
+                if (rand <= currentSum) {
+                    winningIndex = i;
+                    break;
+                }
+            }
+
+            const totalSlices = items.length;
+            const arcSize = (2 * Math.PI) / totalSlices;
+            // Putaran acak beberapa kali ditambah posisi target pemenang
+            let targetAngle = 1.5 * Math.PI - (winningIndex * arcSize + arcSize / 2);
+            let spins = Math.floor(Math.random() * 3) + 5; // 5-7 putaran penuh
+            let finalAngle = startAngle + (spins * 2 * Math.PI) + (targetAngle - (startAngle % (2 * Math.PI)));
+
+            let startTime = null;
+            let duration = 4000; // 4 detik
+
+            function animateSpin(currentTime) {
+                if (!startTime) startTime = currentTime;
+                let elapsed = currentTime - startTime;
+                let progress = Math.min(elapsed / duration, 1);
+                // Efek easeOutCubic
+                let easeProgress = 1 - Math.pow(1 - progress, 3);
+
+                startAngle = startAngle + (finalAngle - startAngle) * (easeProgress === 1 ? 1 : 0.05); // mendekati mulus
+                // Sederhana putaran linear ber-easing
+                let currentPos = startAngle + (finalAngle - startAngle) * easeProgress;
+                // Render ulang
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Gambar manual posisi putaran saat ini
+                const totalSlices = items.length;
+                const arcSize = (2 * Math.PI) / totalSlices;
+                const center = canvas.width / 2;
+                items.forEach((item, i) => {
+                    let angle = currentPos + i * arcSize;
+                    ctx.fillStyle = item.color;
+                    ctx.beginPath();
+                    ctx.arc(center, center, 220, angle, angle + arcSize, false);
+                    ctx.arc(center, center, 40, angle + arcSize, angle, true);
+                    ctx.fill();
+
+                    ctx.save();
+                    ctx.fillStyle = "#FFFFFF";
+                    ctx.translate(center + Math.cos(angle + arcSize / 2) * 140, center + Math.sin(angle + arcSize / 2) * 140);
+                    ctx.rotate(angle + arcSize / 2 + Math.PI / 2);
+                    ctx.font = 'bold 16px Inter, sans-serif';
+                    ctx.fillText(item.name, -ctx.measureText(item.name).width / 2, 0);
+                    ctx.restore();
+                });
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateSpin);
+                } else {
+                    isSpinning = false;
+                    startAngle = finalAngle;
+                    drawWheel();
+                    document.getElementById('winnerName').innerText = items[winningIndex].name;
+                    document.getElementById('resultBox').classList.remove('hidden');
+                }
+            }
+
+            requestAnimationFrame(animateSpin);
+        }
+
+        function toggleAdmin() {
+            const mainView = document.getElementById('mainView');
+            const adminView = document.getElementById('adminView');
+            if (adminView.classList.contains('hidden')) {
+                adminView.classList.remove('hidden');
+                mainView.classList.add('hidden');
+                renderAdminList();
+            } else {
+                adminView.classList.add('hidden');
+                mainView.classList.remove('hidden');
+                drawWheel();
+            }
+        }
+
+        function renderAdminList() {
+            const container = document.getElementById('itemContainer');
+            container.innerHTML = '';
+            items.forEach((item, index) => {
+                container.innerHTML += `
+                    <div class="flex items-center gap-2 bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                        <input type="text" value="${item.name}" onchange="updateItem(${index}, 'name', this.value)" placeholder="Nama" class="flex-1 bg-slate-900 border border-slate-700 px-2 py-1.5 rounded-lg text-xs focus:outline-none">
+                        <input type="number" value="${item.percentage}" onchange="updateItem(${index}, 'percentage', this.value)" placeholder="%" class="w-16 bg-slate-900 border border-slate-700 px-2 py-1.5 rounded-lg text-xs text-center focus:outline-none">
+                        <input type="color" value="${item.color}" onchange="updateItem(${index}, 'color', this.value)" class="w-7 h-7 bg-transparent cursor-pointer rounded">
+                        <button onclick="removeParticipant(${index})" class="text-rose-400 hover:text-rose-300 px-2 text-xs"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+            });
+        }
+
+        function updateItem(index, field, value) {
+            items[index][field] = value;
+        }
+
+        function addParticipant() {
+            const colors = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899'];
+            items.push({ name: "Peserta Baru", percentage: 10, color: colors[items.length % colors.length] });
+            renderAdminList();
+        }
+
+        function removeParticipant(index) {
+            if (items.length > 2) {
+                items.splice(index, 1);
+                renderAdminList();
+            } else {
+                alert('Minimal harus ada 2 peserta!');
+            }
+        }
+
+        function saveSettings() {
+            localStorage.setItem('namz_spin_data', JSON.stringify(items));
+            toggleAdmin();
+            drawWheel();
+        }
+
+        drawWheel();
+    </script>
+</body>
+</html>
