@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wheel of Names</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #1e293b;
+        }
+        .shadow-custom {
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between select-none">
+
+    <header class="w-full bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center relative z-40">
+        <button onclick="openAdmin()" class="w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-sm transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+        </button>
+
+        <span class="font-bold text-sm text-slate-800">Wheel of Names</span>
+
+        <div class="relative">
+            <button onclick="toggleMenu()" class="p-2 rounded-xl hover:bg-slate-100 transition focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
+                </svg>
+            </button>
+
+            <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl py-2 border border-slate-100 z-50">
+                <button onclick="openAdmin()" class="w-full text-left px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center space-x-2 transition">
+                    <span>⚙️ Pengaturan Persentase Admin</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center justify-center p-4 relative max-w-md mx-auto w-full">
+        
+        <div class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 mb-6 flex justify-between items-center shadow-sm text-xs font-medium text-slate-600">
+            <span>Entries: <strong id="entriesCount" class="text-slate-900">0</strong></span>
+            <span>Results: <strong id="resultsCount" class="text-slate-900">0</strong></span>
+        </div>
+
+        <div class="relative w-80 h-80 sm:w-96 sm:h-96 flex items-center justify-center my-2">
+            <div class="absolute -right-3 top-1/2 -translate-y-1/2 z-30 w-0 h-0 border-t-[10px] border-t-transparent border-b-[10px] border-b-transparent border-r-[22px] border-r-amber-400 filter drop-shadow"></div>
+            
+            <canvas id="wheel" width="360" height="360" class="w-full h-full rounded-full shadow-xl border-4 border-white transition-transform duration-[4000ms] cubic-bezier(0.15, 0.9, 0.2, 1)"></canvas>
+
+            <button onclick="spinWheel()" id="spinBtn" class="absolute z-20 w-24 h-24 rounded-full bg-white shadow-2xl hover:scale-105 active:scale-95 transition flex flex-col items-center justify-center border-4 border-slate-50">
+                <span class="text-xs font-bold uppercase tracking-tight text-slate-800 leading-tight">Tap</span>
+                <span class="text-xs font-bold uppercase tracking-tight text-slate-800 leading-tight">to spin</span>
+            </button>
+        </div>
+
+        <div id="resultCard" class="hidden w-full mt-6 bg-white border border-blue-100 p-4 rounded-2xl shadow-custom text-center">
+            <p class="text-xs text-slate-400 font-medium">Hasil Terpilih:</p>
+            <h2 id="winnerText" class="text-xl font-bold text-blue-600 mt-1">-</h2>
+        </div>
+    </main>
+
+    <footer class="w-full text-center py-4 text-[11px] text-slate-400">
+        Wheel of Names &bull; Namz New Era
+    </footer>
+
+    <div id="adminModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md p-6 rounded-3xl shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+                <h2 class="font-bold text-base text-slate-800">Admin - Atur Persentase Menang</h2>
+                <button onclick="closeAdmin()" class="text-slate-400 hover:text-slate-700 text-lg font-bold">&times;</button>
+            </div>
+            
+            <p class="text-xs text-slate-500 mb-4">Atur nama hadiah dan persentase peluang menang (Total wajib pas 100%).</p>
+
+            <div id="prizeInputs" class="space-y-2.5 mb-4">
+                </div>
+
+            <div class="flex justify-between items-center mb-5 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+                <span class="text-slate-600">Total Persentase: <strong id="totalPercentage" class="text-blue-600 font-bold">0%</strong></span>
+            </div>
+
+            <div class="flex space-x-2">
+                <button onclick="saveSettings()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl text-xs transition shadow-sm">Simpan</button>
+                <button onclick="resetDefault()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-xs transition font-medium">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let defaultPrizes = [
+            { name: "Diamond FF 50", weight: 30 },
+            { name: "Zonk / Coba Lagi", weight: 40 },
+            { name: "Akun Elite Pass", weight: 10 },
+            { name: "Voucher Diskon", weight: 20 }
+        ];
+
+        let prizes = JSON.parse(localStorage.getItem('namz_wheel_v3')) || defaultPrizes;
+        let totalResults = parseInt(localStorage.getItem('namz_wheel_results_v3')) || 0;
+
+        const canvas = document.getElementById('wheel');
+        const ctx = canvas.getContext('2d');
+        let currentRotation = 0; // Posisi sudut saat ini
+        let isSpinning = false;
+
+        document.getElementById('resultsCount').innerText = totalResults;
+        document.getElementById('entriesCount').innerText = prizes.length;
+
+        function toggleMenu() {
+            const menu = document.getElementById('dropdownMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        function openAdmin() {
+            const menu = document.getElementById('dropdownMenu');
+            if(!menu.classList.contains('hidden')) menu.classList.add('hidden');
+            
+            document.getElementById('adminModal').classList.remove('hidden');
+            renderAdminInputs();
+        }
+
+        function closeAdmin() {
+            document.getElementById('adminModal').classList.add('hidden');
+        }
+
+        function renderAdminInputs() {
+            const container = document.getElementById('prizeInputs');
+            container.innerHTML = '';
+            let totalP = 0;
+
+            prizes.forEach((prize, index) => {
+                totalP += prize.weight;
+                container.innerHTML += `
+                    <div class="flex space-x-2 items-center bg-slate-50 p-2 rounded-xl border border-slate-200">
+                        <input type="text" value="${prize.name}" id="prize_name_${index}" class="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500" placeholder="Nama Hadiah">
+                        <input type="number" value="${prize.weight}" id="prize_weight_${index}" oninput="calcTotal()" class="w-16 bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 text-center" placeholder="%">
+                        <span class="text-xs text-slate-500 pr-1">%</span>
+                        <button onclick="removePrize(${index})" class="text-red-500 hover:text-red-700 px-2 py-1 text-xs font-bold">&times;</button>
+                    </div>
+                `;
+            });
+
+            container.innerHTML += `
+                <button onclick="addPrizeInput()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-xl text-xs transition border border-dashed border-slate-300 mt-2">+ Tambah Hadiah</button>
+            `;
+
+            document.getElementById('totalPercentage').innerText = totalP + '%';
+        }
+
+        function calcTotal() {
+            let total = 0;
+            prizes.forEach((_, index) => {
+                let valInput = document.getElementById(`prize_weight_${index}`);
+                if (valInput) {
+                    total += parseInt(valInput.value) || 0;
+                }
+            });
+            let el = document.getElementById('totalPercentage');
+            el.innerText = total + '%';
+            el.style.color = total === 100 ? '#2563eb' : '#ef4444';
+        }
+
+        function addPrizeInput() {
+            prizes.forEach((_, i) => {
+                let nameInput = document.getElementById(`prize_name_${i}`);
+                let weightInput = document.getElementById(`prize_weight_${i}`);
+                if(nameInput && weightInput) {
+                    prizes[i].name = nameInput.value;
+                    prizes[i].weight = parseInt(weightInput.value) || 0;
+                }
+            });
+            prizes.push({ name: "Hadiah Baru", weight: 0 });
+            renderAdminInputs();
+            calcTotal();
+        }
+
+        function removePrize(index) {
+            if (prizes.length <= 2) {
+                alert("Minimal harus ada 2 hadiah!");
+                return;
+            }
+            prizes.forEach((_, i) => {
+                let nameInput = document.getElementById(`prize_name_${i}`);
+                let weightInput = document.getElementById(`prize_weight_${i}`);
+                if(nameInput && weightInput) {
+                    prizes[i].name = nameInput.value;
+                    prizes[i].weight = parseInt(weightInput.value) || 0;
+                }
+            });
+            prizes.splice(index, 1);
+            renderAdminInputs();
+            calcTotal();
+        }
+
+        function saveSettings() {
+            let newPrizes = [];
+            let total = 0;
+
+            prizes.forEach((_, index) => {
+                let name = document.getElementById(`prize_name_${index}`).value.trim();
+                let weight = parseInt(document.getElementById(`prize_weight_${index}`).value) || 0;
+                if (name !== "") {
+                    newPrizes.push({ name, weight });
+                    total += weight;
+                }
+            });
+
+            if (newPrizes.length < 2) {
+                alert("Minimal harus ada 2 hadiah yang valid!");
+                return;
+            }
+
+            if (total !== 100) {
+                alert("Total persentase peluang harus pas 100%!");
+                return;
+            }
+
+            prizes = newPrizes;
+            localStorage.setItem('namz_wheel_v3', JSON.stringify(prizes));
+            document.getElementById('entriesCount').innerText = prizes.length;
+            closeAdmin();
+            drawWheel();
+            alert("Pengaturan berhasil disimpan!");
+        }
+
+        function resetDefault() {
+            if (confirm("Kembalikan ke pengaturan awal?")) {
+                prizes = defaultPrizes;
+                localStorage.removeItem('namz_wheel_v3');
+                document.getElementById('entriesCount').innerText = prizes.length;
+                renderAdminInputs();
+                drawWheel();
+                closeAdmin();
+            }
+        }
+
+        function drawWheel() {
+            let totalSlices = prizes.length;
+            let sliceAngle = (2 * Math.PI) / totalSlices;
+            let currentAngle = 0;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let center = canvas.width / 2;
+            let radius = center - 12;
+
+            const colors = ["#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"];
+
+            prizes.forEach((prize, index) => {
+                let color = colors[index % colors.length];
+
+                ctx.beginPath();
+                ctx.fillStyle = color;
+                ctx.moveTo(center, center);
+                ctx.arc(center, center, radius, currentAngle, currentAngle + sliceAngle);
+                ctx.lineTo(center, center);
+                ctx.fill();
+
+                // Teks melingkar
+                ctx.save();
+                ctx.translate(center, center);
+                ctx.rotate(currentAngle + sliceAngle / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 13px 'Inter', sans-serif";
+                ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
+                ctx.shadowBlur = 4;
+                ctx.fillText(prize.name, radius - 25, 5);
+                ctx.restore();
+
+                currentAngle += sliceAngle;
+            });
+        }
+
+        function spinWheel() {
+            if (isSpinning) return;
+            isSpinning = true;
+            document.getElementById('resultCard').classList.add('hidden');
+
+            // 1. Tentukan pemenang berdasarkan persentase (weight) di Admin
+            let totalWeight = prizes.reduce((sum, p) => sum + p.weight, 0);
+            let randomWeight = Math.random() * totalWeight;
+            let cumulativeWeight = 0;
+            let winningIndex = 0;
+
+            for (let i = 0; i < prizes.length; i++) {
+                cumulativeWeight += prizes[i].weight;
+                if (randomWeight <= cumulativeWeight) {
+                    winningIndex = i;
+                    break;
+                }
+            }
+
+            // 2. Hitung sudut putaran yang SANGAT PRESISI agar berhenti persis di tengah bagian pemenang
+            let totalSlices = prizes.length;
+            let sliceDegree = 360 / totalSlices;
+            
+            // Posisi tengah dari slice pemenang (karena searah jarum jam dari titik 0 / kanan)
+            let centerOfWinningSlice = (winningIndex * sliceDegree) + (sliceDegree / 2);
+            
+            // Hitung sudut rotasi tujuan agar bagian tersebut tepat menunjuk ke arah 0 derajat (panah kanan)
+            let targetDegree = 360 - centerOfWinningSlice;
+            
+            // Tambahkan beberapa putaran penuh (misal 8 putaran) agar efek animasinya mulus
+            let fullSpins = 360 * 8;
+            
+            // Pastikan sudut rotasi selalu bertambah maju ke depan supaya animasi putarannya tidak berbalik arah
+            let currentMod = currentRotation % 360;
+            let degreeDifference = targetDegree - currentMod;
+            if (degreeDifference < 0) degreeDifference += 360;
+
+            currentRotation += fullSpins + degreeDifference;
+            canvas.style.transform = `rotate(${currentRotation}deg)`;
+
+            // 3. Tampilkan hasil setelah animasi selesai (4 detik)
+            setTimeout(() => {
+                isSpinning = false;
+                totalResults++;
+                localStorage.setItem('namz_wheel_results_v3', totalResults);
+                document.getElementById('resultsCount').innerText = totalResults;
+
+                document.getElementById('winnerText').innerText = prizes[winningIndex].name;
+                document.getElementById('resultCard').classList.remove('hidden');
+            }, 4000);
+        }
+
+        drawWheel();
+    </script>
+</body>
+</html>
