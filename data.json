@@ -1,0 +1,12 @@
+{
+  "items": [
+    {"name": "Ali", "percentage": 15, "color": "#3b82f6"},
+    {"name": "Beatriz", "percentage": 15, "color": "#ef4444"},
+    {"name": "Charles", "percentage": 10, "color": "#f59e0b"},
+    {"name": "Diya", "percentage": 10, "color": "#10b981"},
+    {"name": "Eric", "percentage": 15, "color": "#3b82f6"},
+    {"name": "Fatima", "percentage": 15, "color": "#ef4444"},
+    {"name": "Gabriel", "percentage": 10, "color": "#f59e0b"},
+    {"name": "Hanna", "percentage": 10, "color": "#10b981"}
+  ]
+}
